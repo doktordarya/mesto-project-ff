@@ -1,4 +1,4 @@
-// @todo: Функция создания карточки
+//Создание новой карточки
 
 function createCard(link, name, deleteCard, openPopupTypeImage, likeCard) {
   const cardTemplate = document.querySelector("#card-template").content;
@@ -9,6 +9,7 @@ function createCard(link, name, deleteCard, openPopupTypeImage, likeCard) {
 
   cardElement.querySelector(".card__image").src = link;
   cardElement.querySelector(".card__title").textContent = name;
+  cardElement.querySelector(".card__image").alt = name;
 
   cardImage.addEventListener("click", function () {
     openPopupTypeImage(name, link);
@@ -19,13 +20,13 @@ function createCard(link, name, deleteCard, openPopupTypeImage, likeCard) {
   return cardElement;
 }
 
-// @todo: Функция удаления карточки
+//Удаление карточки
 
 function deleteCard(evt) {
   evt.target.closest(".card").remove();
 }
 
-//Функция лайка карточки
+//Лайк карточки
 
 function likeCard(evt) {
   evt.target.classList.toggle("card__like-button_is-active");
