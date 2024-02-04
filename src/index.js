@@ -6,6 +6,28 @@ import {
   closeModal,
   closePopupByOverlay,
 } from "./components/modal.js";
+import {
+  validationConfig,
+  showInputError,
+  hideInputError,
+  isValid,
+  setEventListeners,
+  hasInvalidInput,
+  toggleButton,
+  enableValidation,
+  clearValidation,
+} from "./validation.js";
+
+import {
+  getProfileInfo,
+  getInitialCards,
+  editProfileSave,
+  addNewCard,
+  removeCard,
+  likedCard,
+  deletedLike,
+  updateUserAvatar,
+} from "./api";
 
 //DOM узлы
 
@@ -16,26 +38,73 @@ const profileEditButton = document.querySelector(".profile__edit-button"); //к�
 const popupTypeEdit = document.querySelector(".popup_type_edit"); //попап профиля
 const popupImage = document.querySelector(".popup__image"); //фулскрин картинка
 const popupTypeImage = document.querySelector(".popup_type_image"); //попап фулскрин картинки
+const profileImage = document.querySelector(".profile__image"); //аватар пользователя
+const popupTypeUpdAvatar = document.querySelector(".popup_type_update_avatar"); //попап обновления аватара
 const popup = document.querySelectorAll(".popup"); //все попапы
 const popupCaption = document.querySelector(".popup__caption"); //название фулскрин картинки
+const profileForm = document.getElementById("edit_profile"); //форма попапа редактирования профиля
+const newCardForm = document.getElementById("new_place"); //форма попапа новой карточки
+const updAvatarForm = document.getElementById("update_avatar"); //форма попапа обновления аватара
+const profileName = document.querySelector(".profile__title"); //имя пользователя
+const profileAbout = document.querySelector(".profile__description"); //род деятельности пользователя
 
-//Вывести карточки на страницу
+//Получить информацию о пользователе с сервера
 
-initialCards.forEach(function ({ link, name }) {
-  const newcard = createCard(
-    link,
-    name,
-    deleteCard,
-    openPopupTypeImage,
-    likeCard
-  );
-  placesList.append(newcard);
-});
+getProfileInfo()
+  .then((res) => {
+    console.log(res);
+  })
+  .catch((err) => {
+    console.log("Ошибка");
+  });
+
+//Вывести карточки на страницу с сервера
+
+getInitialCards()
+  .then((res) => {
+    console.log(res);
+  })
+  .catch((err) => {
+    console.log("Ошибка");
+  });
+
+let userId;
+let cardId;
+let cardOwnerId;
+
+Promise.all([getProfileInfo(), getInitialCards()])
+  .then(([userInfo, initialCards]) => {
+    profileName.textContent = userInfo.name;
+    profileAbout.textContent = userInfo.about;
+    profileImage.src = userInfo.avatar;
+    userId = userInfo._id;
+
+    initialCards.forEach((card) => {
+      placesList.append(
+        createCard(
+          card,
+          userInfo,
+          card.link,
+          card.name,
+          deleteCard,
+          openPopupTypeImage,
+          likeCard,
+          cardId,
+          userId
+        )
+      );
+      console.log("Промисы выполнены");
+    });
+  })
+  .catch((err) => {
+    console.log("Ошибка");
+  });
 
 //Открытие попапа новой карточки
 
 profileAddButton.addEventListener("click", function () {
   openModal(popupTypeNewCard);
+  clearValidation(newCardForm, validationConfig);
 });
 
 //Открытие попапа профиля
@@ -44,6 +113,7 @@ profileEditButton.addEventListener("click", function () {
   nameInput.value = document.querySelector(".profile__title").textContent;
   jobInput.value = document.querySelector(".profile__description").textContent;
   openModal(popupTypeEdit);
+  clearValidation(profileForm, validationConfig);
 });
 
 //Открытие попапа с картинкой
@@ -55,12 +125,19 @@ function openPopupTypeImage(name, link) {
   openModal(popupTypeImage);
 }
 
+//Открытие попапа обновления аватара
+
+profileImage.addEventListener("click", function () {
+  openModal(popupTypeUpdAvatar);
+  clearValidation(updAvatarForm, validationConfig);
+});
+
 //Закрытие попапов
 
 popupTypeNewCard
   .querySelector(".popup__close")
   .addEventListener("click", function () {
-    formNewPlace.reset();
+    newCardForm.reset();
     closeModal(popupTypeNewCard);
   });
 
@@ -76,6 +153,13 @@ popupTypeImage
     closeModal(popupTypeImage);
   });
 
+popupTypeUpdAvatar
+  .querySelector(".popup__close")
+  .addEventListener("click", function () {
+    updAvatarForm.reset();
+    closeModal(popupTypeUpdAvatar);
+  });
+
 //Закрытие попапов кликом на оверлэй
 
 popup.forEach(function (item) {
@@ -84,53 +168,95 @@ popup.forEach(function (item) {
 
 //Добавление новой карточки
 
-const formNewPlace = document.querySelector(
-  ".popup_type_new-card .popup__form"
-);
+const cardNameInput = newCardForm.querySelector(".popup__input_type_card-name"); //инпут названия картинки
+const linkInput = newCardForm.querySelector(".popup__input_type_url"); //инпут ссылки на картинку
 
-const cardNameInput = formNewPlace.querySelector(
-  ".popup__input_type_card-name"
-);
-const linkInput = formNewPlace.querySelector(".popup__input_type_url");
-
-formNewPlace.addEventListener("submit", function (evt) {
+newCardForm.addEventListener("submit", function (evt) {
   evt.preventDefault();
+
+  newCardForm.querySelector(".popup__button").textContent = "Сохранение...";
 
   const nameValue = cardNameInput.value;
   const linkValue = linkInput.value;
 
-  const newPlaceCard = createCard(
-    linkValue,
-    nameValue,
-    deleteCard,
-    openPopupTypeImage,
-    likeCard
-  );
-  placesList.prepend(newPlaceCard);
-
-  formNewPlace.reset();
-  closeModal(popupTypeNewCard);
+  addNewCard(nameValue, linkValue)
+    .then((res) => {
+      console.log(res);
+      placesList.prepend(
+        createCard(
+          card,
+          userInfo,
+          res.link,
+          res.name,
+          deleteCard,
+          openPopupTypeImage,
+          likeCard,
+          cardId,
+          userId
+        )
+      );
+      newCardForm.reset();
+      closeModal(popupTypeNewCard);
+    })
+    .catch((err) => {
+      console.log("Ошибка");
+    });
 });
 
 //Редактирование формы профиля
 
-const formEditProfile = document.querySelector(".popup_type_edit .popup__form");
-const nameInput = formEditProfile.querySelector(".popup__input_type_name");
-const jobInput = formEditProfile.querySelector(
-  ".popup__input_type_description"
-);
+const nameInput = profileForm.querySelector(".popup__input_type_name"); //инпут имени
+const jobInput = profileForm.querySelector(".popup__input_type_description"); //инпут занятия
 
 function editFormEditProfile(evt) {
   evt.preventDefault();
 
+  profileForm.querySelector(".popup__button").textContent = "Сохранение...";
+
   const jobValue = jobInput.value;
   const nameValue = nameInput.value;
-  document.querySelector(".profile__title").textContent = nameValue;
-  document.querySelector(".profile__description").textContent = jobValue;
 
-  formEditProfile.reset();
+  editProfileSave(nameValue, jobValue)
+    .then((res) => {
+      console.log(res);
+      profileName.textContent = res.name;
+      profileAbout.textContent = res.about;
+    })
+    .catch((err) => {
+      console.log("Ошибка");
+    });
 
+  profileForm.reset();
   closeModal(popupTypeEdit);
 }
 
-formEditProfile.addEventListener("submit", editFormEditProfile);
+profileForm.addEventListener("submit", editFormEditProfile);
+
+//Обновление аватара
+
+const avatarLink = document.getElementById("update-avatar-input"); //инпут ссылки аватара
+
+function updatingUserAvatar(evt) {
+  evt.preventDefault();
+
+  updAvatarForm.querySelector(".popup__button").textContent = "Сохранение...";
+
+  const linkAvatar = avatarLink.value;
+
+  updateUserAvatar(linkAvatar)
+    .then((res) => {
+      profileImage.src = res.link;
+      closeModal(popupTypeUpdAvatar);
+    })
+    .catch((err) => {
+      console.log("Ошибка");
+    });
+}
+
+updAvatarForm.addEventListener("submit", (evt) => {
+  updatingUserAvatar(evt);
+});
+
+//Валидация форм
+
+enableValidation(validationConfig);
