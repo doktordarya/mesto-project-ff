@@ -2,17 +2,7 @@
 
 import { removeCard, likedCard, deletedLike } from "../api";
 
-function createCard(
-  card,
-  userInfo,
-  link,
-  name,
-  deleteCard,
-  openPopupTypeImage,
-  likeCard,
-  cardId,
-  userId
-) {
+function createCard(card, userId, deleteCard, openPopupTypeImage, likeCard) {
   const cardTemplate = document.querySelector("#card-template").content;
   const cardElement = cardTemplate.querySelector(".card").cloneNode(true);
   const cardImage = cardElement.querySelector(".card__image");
@@ -25,19 +15,25 @@ function createCard(
   cardImage.alt = card.name;
   cardElement.querySelector(".card__title").textContent = card.name;
 
-  if (userInfo._id === card.owner._id) {
+  if (userId === card.owner._id) {
     deleteButton.classList.add("card__delete-button_visible");
     deleteButton.addEventListener("click", () => {
-      deleteCard(cardId, cardElement);
+      deleteCard(card._id, cardElement);
     });
   }
 
+  card.likes.forEach((element) => {
+    if (userId === element._id) {
+      likeButton.classList.add("card__like-button_is-active");
+    }
+  });
+
   likeButton.addEventListener("click", () => {
-    likeCard(cardId, likeButton, likesCounter);
+    likeCard(card._id, likeButton, likesCounter);
   });
 
   cardImage.addEventListener("click", () => {
-    openPopupTypeImage(name, link);
+    openPopupTypeImage(card.name, card.link);
   });
 
   return cardElement;
@@ -61,7 +57,6 @@ function likeCard(cardId, likeButton, likesCounter) {
   if (!likeButton.classList.contains("card__like-button_is-active")) {
     likedCard(cardId)
       .then((res) => {
-        console.log(res);
         likeButton.classList.add("card__like-button_is-active");
         likesCounter.textContent = res.likes.length;
       })
@@ -71,7 +66,6 @@ function likeCard(cardId, likeButton, likesCounter) {
   } else {
     deletedLike(cardId)
       .then((res) => {
-        console.log(res);
         likeButton.classList.remove("card__like-button_is-active");
         likesCounter.textContent = res.likes.length;
       })

@@ -1,5 +1,4 @@
 import "./pages/index.css";
-import { initialCards } from "./components/cards.js";
 import { createCard, deleteCard, likeCard } from "./components/card.js";
 import {
   openModal,
@@ -31,7 +30,7 @@ import {
 
 //DOM узлы
 
-const placesList = document.querySelector(".places__list");
+const placesList = document.querySelector(".places__list"); //список карточек
 const profileAddButton = document.querySelector(".profile__add-button"); //кнопка добавления новой карточки
 const popupTypeNewCard = document.querySelector(".popup_type_new-card"); //попап новой карточки
 const profileEditButton = document.querySelector(".profile__edit-button"); //кнопка редактирования профиля
@@ -69,29 +68,17 @@ getInitialCards()
   });
 
 let userId;
-let cardId;
-let cardOwnerId;
 
 Promise.all([getProfileInfo(), getInitialCards()])
-  .then(([userInfo, initialCards]) => {
+  .then(([userInfo, card]) => {
     profileName.textContent = userInfo.name;
     profileAbout.textContent = userInfo.about;
     profileImage.src = userInfo.avatar;
     userId = userInfo._id;
 
-    initialCards.forEach((card) => {
+    card.forEach((card) => {
       placesList.append(
-        createCard(
-          card,
-          userInfo,
-          card.link,
-          card.name,
-          deleteCard,
-          openPopupTypeImage,
-          likeCard,
-          cardId,
-          userId
-        )
+        createCard(card, userId, deleteCard, openPopupTypeImage, likeCard)
       );
       console.log("Промисы выполнены");
     });
@@ -171,29 +158,17 @@ popup.forEach(function (item) {
 const cardNameInput = newCardForm.querySelector(".popup__input_type_card-name"); //инпут названия картинки
 const linkInput = newCardForm.querySelector(".popup__input_type_url"); //инпут ссылки на картинку
 
-newCardForm.addEventListener("submit", function (evt) {
+newCardForm.addEventListener("submit", (evt) => {
   evt.preventDefault();
-
-  newCardForm.querySelector(".popup__button").textContent = "Сохранение...";
 
   const nameValue = cardNameInput.value;
   const linkValue = linkInput.value;
 
   addNewCard(nameValue, linkValue)
-    .then((res) => {
-      console.log(res);
+    .then((card) => {
+      newCardForm.querySelector(".popup__button").textContent = "Сохранение...";
       placesList.prepend(
-        createCard(
-          card,
-          userInfo,
-          res.link,
-          res.name,
-          deleteCard,
-          openPopupTypeImage,
-          likeCard,
-          cardId,
-          userId
-        )
+        createCard(card, userId, deleteCard, openPopupTypeImage, likeCard)
       );
       newCardForm.reset();
       closeModal(popupTypeNewCard);
@@ -208,53 +183,45 @@ newCardForm.addEventListener("submit", function (evt) {
 const nameInput = profileForm.querySelector(".popup__input_type_name"); //инпут имени
 const jobInput = profileForm.querySelector(".popup__input_type_description"); //инпут занятия
 
-function editFormEditProfile(evt) {
+profileForm.addEventListener("submit", (evt) => {
   evt.preventDefault();
-
-  profileForm.querySelector(".popup__button").textContent = "Сохранение...";
 
   const jobValue = jobInput.value;
   const nameValue = nameInput.value;
 
   editProfileSave(nameValue, jobValue)
     .then((res) => {
-      console.log(res);
+      profileForm.querySelector(".popup__button").textContent = "Сохранение...";
       profileName.textContent = res.name;
       profileAbout.textContent = res.about;
+      profileForm.reset();
+      closeModal(popupTypeEdit);
     })
     .catch((err) => {
       console.log("Ошибка");
     });
-
-  profileForm.reset();
-  closeModal(popupTypeEdit);
-}
-
-profileForm.addEventListener("submit", editFormEditProfile);
+});
 
 //Обновление аватара
 
 const avatarLink = document.getElementById("update-avatar-input"); //инпут ссылки аватара
 
-function updatingUserAvatar(evt) {
+updAvatarForm.addEventListener("submit", (evt) => {
   evt.preventDefault();
-
-  updAvatarForm.querySelector(".popup__button").textContent = "Сохранение...";
 
   const linkAvatar = avatarLink.value;
 
   updateUserAvatar(linkAvatar)
     .then((res) => {
-      profileImage.src = res.link;
+      updAvatarForm.querySelector(".popup__button").textContent =
+        "Сохранение...";
+      profileImage.src = res.avatar;
+      updAvatarForm.reset();
       closeModal(popupTypeUpdAvatar);
     })
     .catch((err) => {
       console.log("Ошибка");
     });
-}
-
-updAvatarForm.addEventListener("submit", (evt) => {
-  updatingUserAvatar(evt);
 });
 
 //Валидация форм
