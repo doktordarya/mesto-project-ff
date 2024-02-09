@@ -1,11 +1,4 @@
-const validationConfig = {
-  formSelector: ".popup__form",
-  inputSelector: ".popup__input",
-  submitButtonSelector: ".popup__button",
-  inactiveButtonClass: "popup__button_disabled",
-  inputErrorClass: "popup__input_type_error",
-  errorClass: "popup__input-error_active",
-};
+import { validationConfig } from "./index.js";
 
 const showInputError = (
   validationConfig,
@@ -102,14 +95,4 @@ const clearValidation = (formElement, validationConfig) => {
   });
 };
 
-export {
-  validationConfig,
-  showInputError,
-  hideInputError,
-  isValid,
-  setEventListeners,
-  hasInvalidInput,
-  toggleButton,
-  enableValidation,
-  clearValidation,
-};
+export { enableValidation, clearValidation };
