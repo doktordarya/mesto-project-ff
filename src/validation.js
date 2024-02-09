@@ -1,5 +1,3 @@
-import { validationConfig } from "./index.js";
-
 const showInputError = (
   validationConfig,
   formElement,
@@ -19,7 +17,7 @@ const hideInputError = (validationConfig, formElement, inputElement) => {
   errorElement.textContent = "";
 };
 
-const isValid = (formElement, inputElement) => {
+const isValid = (validationConfig, formElement, inputElement) => {
   if (inputElement.validity.patternMismatch) {
     inputElement.setCustomValidity(inputElement.dataset.errorMessage);
   } else {
@@ -50,7 +48,7 @@ const setEventListeners = (validationConfig, formElement) => {
 
   inputList.forEach((inputElement) => {
     inputElement.addEventListener("input", () => {
-      isValid(formElement, inputElement);
+      isValid(validationConfig, formElement, inputElement);
       toggleButton(validationConfig, inputList, buttonElement);
     });
   });

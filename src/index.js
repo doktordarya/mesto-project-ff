@@ -30,8 +30,6 @@ const validationConfig = {
   errorClass: "popup__input-error_active",
 };
 
-export { validationConfig };
-
 //DOM узлы
 
 const placesList = document.querySelector(".places__list"); //список карточек
